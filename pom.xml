@@ -9,9 +9,6 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>dependency-privileges-maven-plugin</name>
-    <description>This plugin is a
-        This guards the supply chain against malicious actors that might tamper with the artifacts in
-        the repository.</description>
     <url>https://github.com/chains-project/dependency-privileges</url>
     <inceptionYear>2024</inceptionYear>
     <licenses>
