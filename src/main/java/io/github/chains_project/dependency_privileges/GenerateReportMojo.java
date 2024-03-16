@@ -39,7 +39,7 @@ public class GenerateReportMojo extends AbstractLockfileMojo {
     public void execute() throws MojoExecutionException {
         try {
             Environment environment = generateMetaInformation();
-            Path lockFilePath = Path.of(project.getBasedir().getAbsolutePath(), "access-privileges.json");
+            Path lockFilePath = Path.of(project.getBasedir().getAbsolutePath(), "lockfile.json");
             LockFile lockFileFromFile =
                     Files.exists(lockFilePath) ? LockFile.readLockFile(lockFilePath) : null;
             Config config = Boolean.parseBoolean(getConfigFromFile) ? getConfig(lockFileFromFile) : getConfig();

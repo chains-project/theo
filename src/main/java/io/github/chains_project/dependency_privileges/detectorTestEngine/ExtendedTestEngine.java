@@ -21,7 +21,7 @@ public class ExtendedTestEngine implements TestEngine {
 
     @Override
     public String getId() {
-        return "custom-test-engine";
+        return "detector-test-engine";
     }
 
     @Override
@@ -60,36 +60,6 @@ public class ExtendedTestEngine implements TestEngine {
         engineDescriptor.addChild(new TestClassDescriptor(javaClass, engineDescriptor));
     }
 
-    private void executeTest(TestDescriptor testDescriptor, EngineExecutionListener listener) {
-        if (testDescriptor instanceof MethodSource) {
-            Method testMethod = ((MethodSource) testDescriptor).getJavaMethod();
-            Class<?> testClass = testMethod.getDeclaringClass();
-            Object testInstance;
-            try {
-                testInstance = testClass.getDeclaredConstructor().newInstance();
-            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
-                     IllegalAccessException e) {
-                throw new RuntimeException("Error creating test instance for " + testMethod.getName(), e);
-            }
-
-            try {
-                testMethod.invoke(testInstance);
-                listener.executionFinished(testDescriptor, TestExecutionResult.successful());
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AssertionError) {
-                    listener.executionFinished(testDescriptor, TestExecutionResult.failed(cause));
-                } else {
-                    throw new RuntimeException("Error executing test " + testMethod.getName(), e);
-                }
-            } catch (IllegalAccessException | IllegalArgumentException e) {
-                throw new RuntimeException("Error executing test " + testMethod.getName(), e);
-            }
-        } else {
-            // ToDo: Handle non-method-level descriptors (e.g., class-level) if needed
-        }
-    }
-
     @Override
     public void execute(ExecutionRequest request) {
         TestDescriptor root = request.getRootTestDescriptor();
@@ -111,11 +81,37 @@ public class ExtendedTestEngine implements TestEngine {
         } catch (IOException e) {
             throw new RuntimeException("Error in lockfile path configuration", e);
         }
-        executeTest(testDescriptor, request.getEngineExecutionListener());
+        executeTest((TestMethodDescriptor) testDescriptor, request.getEngineExecutionListener());
         try {
             baseDetector.afterEach();
         } catch (IOException e) {
             throw new RuntimeException("Error in lockfile path configuration", e);
         }
+    }
+
+    private void executeTest(TestMethodDescriptor testDescriptor, EngineExecutionListener listener) {
+        Method testMethod = testDescriptor.getTestMethod();
+        Class<?> testClass = testMethod.getDeclaringClass();
+        Object testInstance;
+        try {
+            testInstance = testClass.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
+                 IllegalAccessException e) {
+            throw new RuntimeException("Error creating test instance for " + testMethod.getName(), e);
+        }
+        try {
+            testMethod.invoke(testInstance);
+            listener.executionFinished(testDescriptor, TestExecutionResult.successful());
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AssertionError) {
+                listener.executionFinished(testDescriptor, TestExecutionResult.failed(cause));
+            } else {
+                throw new RuntimeException("Error executing test " + testMethod.getName(), e);
+            }
+        } catch (IllegalAccessException | IllegalArgumentException e) {
+            throw new RuntimeException("Error executing test " + testMethod.getName(), e);
+        }
+
     }
 }
