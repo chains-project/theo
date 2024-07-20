@@ -1,41 +1,41 @@
-# dependency-privileges
-dependency-privileges is a tool to monitor access privileges originating from third-party dependencies.
-It extracts runtime  information by running the test suite of a project and maps the 
-resource accesses to dependencies. 
+[![Build Status][ci-shield]][ci-link]
+[![Coverage Status][coverage-shield]][ci-link]
+
+# Theo
+Theo is a tool to monitor access privileges originating from third-party dependencies.
+It extracts runtime information by running the test suite and/or running a workload. Then it maps the resource accesses 
+to dependencies. 
 
 ## How it works
 
-1. Dependency-privileges contains a JUnit custom test engine that will extend the test cases in the project test suite to monitor the test execution.
-2. The monitoring part of the running tests is done using the Java Flight Recorder (JFR).  
-3. The [maven-lockfile](https://github.com/chains-project/maven-lockfile) is used to generate a lockfile for the project, which will be extended with access privilege information collected from the JFR.
+1. Theo consists of a preprocessor, a shader and a monitor. 
+2. During the preprocessing stage, the [maven-lockfile](https://github.com/chains-project/maven-lockfile) is used to generate a lockfile for the project. The preprocessor also adds the project dependencies to the classpath of the monitor by temporarily adding them to the pom file.
+3. The shader shades the compile scoped dependencies in the monitor, so that there will not be any conflicts with the classes loaded from temporarily added dependencies.
+4. The monitoring part of the running program is done using the [Java Flight Recorder (JFR)](https://openjdk.org/jeps/328). Then the dependency information in the lockfile will be extended with access privilege information collected by the JFR.  
 
 ## Usage
 
-To run the tool, add the plugin to your `pom.xml`.
+To run the tool, execute the `run_workflow.sh`.
 
-```xml
-<plugin>
-    <groupId>io.github.chains-project</groupId>
-    <artifactId>dependency-privileges</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <executions>
-        <execution>
-            <goals>
-                <goal>generate</goal>
-            </goals>
-            <phase>compile</phase>
-        </execution>
-    </executions>
-</plugin>
-```
+Here's a breakdown of what it does.
 
-Then execute the test suite.
-
- ```sh
-  mvn clean test
- ```
-
+- Packages the preprocessor
+- Generates a lockfile for the project under consideration
+- Installs the shader into the local maven repository
+- Packages the monitor
+- Runs the test cases or the workload depending on the use case with JFR attached
+- Runs the monitor and generates the reports
 
 ## Reports
 
+## Miscellaneous
 
+- Theo stands for *Third Eye Open*. 
+- *[Third Eye Blind](https://www.youtube.com/channel/UCHdCnspLnD7bgi_U6E44W6g)* is an American rock band.
+- In Hinduism and Buddhism, the *[third eye](https://en.wikipedia.org/wiki/Third_eye)* symbolises the power of knowledge, the detection of evil, and consciousness. 
+
+<!-- references -->
+
+[ci-shield]: https://github.com/chains-project/theo/workflows/CI/badge.svg?branch=master
+[ci-link]: https://github.com/chains-project/theo/actions
+[coverage-shield]: https://github.com/chains-project/theo/blob/master/.github/badges/jacoco.svg
