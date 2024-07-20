@@ -135,12 +135,6 @@ public class DetectorCategoryFactory {
                 String activatedMethod = event.getValue("method");
                 return new ReservedStackActivation(method, className, calledBy, activatedMethod);
             }
-            case "SafepointBegin" -> {
-                int totalThreadCount = event.getValue("totalThreadCount");
-                int jniCriticalThreadCount = event.getValue("jniCriticalThreadCount");
-                return new SafepointBegin(method, className, calledBy, Integer.toString(totalThreadCount),
-                        Integer.toString(jniCriticalThreadCount));
-            }
         }
         return null;
     }
@@ -176,8 +170,7 @@ public class DetectorCategoryFactory {
         DESERIALIZATION("Deserialization"),
         // Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method
         // in call stack
-        RESERVEDSTACKACTIVATION("ReservedStackActivation"),
-        SAFEPOINTBEGIN("SafepointBegin");
+        RESERVEDSTACKACTIVATION("ReservedStackActivation");
 
         private final String name;
 

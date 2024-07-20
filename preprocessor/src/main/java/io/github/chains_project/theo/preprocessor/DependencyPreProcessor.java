@@ -26,7 +26,7 @@ public class DependencyPreProcessor {
      * Adds the dependencies of the project to the monitor's pom file.
      */
     public void processPomFile(Path lockfilePath) {
-        File pomFile = new File("../monitor/org-pom.xml");
+        File pomFile = new File("../monitor/org.xml");
         File pomLockFile = new File("../monitor/pom.xml");
         try {
             LockFile lockFile = LockFile.readLockFile(lockfilePath);

@@ -21,7 +21,6 @@ import java.util.List;
         @JsonSubTypes.Type(value = NetworkUtilization.class, name = "networkUtilization"),
         @JsonSubTypes.Type(value = ProcessStart.class, name = "processStart"),
         @JsonSubTypes.Type(value = ReservedStackActivation.class, name = "reservedStackActivation"),
-        @JsonSubTypes.Type(value = SafepointBegin.class, name = "safePointBegin"),
         @JsonSubTypes.Type(value = SecurityPropertyModification.class, name = "securityPropertyModification"),
         @JsonSubTypes.Type(value = SocketRead.class, name = "SocketRead"),
         @JsonSubTypes.Type(value = SocketWrite.class, name = "socketWrite"),
