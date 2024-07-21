@@ -25,6 +25,7 @@ Here's a breakdown of what it does.
 - Packages the monitor
 - Runs the test cases or the workload depending on the use case with JFR attached
 - Runs the monitor and generates the reports
+- Resets the pom files
 
 ## Reports
 

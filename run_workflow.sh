@@ -34,3 +34,5 @@ case $yn in
     ;;
 esac
 cat org.xml > pom.xml
+cd ../
+cat org.xml > pom.xml

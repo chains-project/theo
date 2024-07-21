@@ -24,12 +24,15 @@ public class DependencyPreProcessor {
      */
     public void processPomFile(Path projectPomFilePath) {
         File pomFile = new File("../monitor/pom.xml");
+        File parentPomFile = new File("../pom.xml");
         File projectPomFile = new File(projectPomFilePath.toUri());
         try {
             Model monitorPomModel = readPomFile(pomFile);
+            Model parentPomModel = readPomFile(parentPomFile);
             Model projectPomModel = readPomFile(projectPomFile);
-            updateDependencies(monitorPomModel, projectPomModel);
-            writePomLockFile(monitorPomModel, pomFile);
+            updateDependencies(monitorPomModel, projectPomModel, parentPomModel);
+            writePomFile(monitorPomModel, pomFile);
+            writePomFile(parentPomModel, parentPomFile);
         } catch (IOException | XmlPullParserException e) {
             throw new RuntimeException("Could not create the pom file with the dependencies", e);
         }
@@ -42,7 +45,7 @@ public class DependencyPreProcessor {
         }
     }
 
-    private void updateDependencies(Model monitorPomModel, Model projectPomModel) {
+    private void updateDependencies(Model monitorPomModel, Model projectPomModel, Model parentPomModel) {
         List<Dependency> projectDependencies = projectPomModel.getDependencies();
         DependencyManagement projectDepManagement = projectPomModel.getDependencyManagement();
         Parent projectDepParent = projectPomModel.getParent();
@@ -52,13 +55,13 @@ public class DependencyPreProcessor {
         monitorPomModel.setDependencies(monitorPomDependencies);
         monitorPomModel.setDependencyManagement(projectDepManagement);
         if (projectPomModel.getParent() != null) {
-            monitorPomModel.setParent(projectDepParent);
+            parentPomModel.setParent(projectDepParent);
         }
         List<Repository> projectRepositories = projectPomModel.getRepositories();
         monitorPomModel.setRepositories(projectRepositories);
     }
 
-    private void writePomLockFile(Model pomModel, File pomLockFile) throws IOException {
+    private void writePomFile(Model pomModel, File pomLockFile) throws IOException {
         try (FileWriter fileWriter = new FileWriter(pomLockFile)) {
             MavenXpp3Writer writer = new MavenXpp3Writer();
             writer.write(fileWriter, pomModel);
