@@ -6,6 +6,8 @@ import io.github.chains_project.theo.monitor.utils.AccessRecord;
 import io.github.chains_project.theo.monitor.utils.DependencyParser;
 import io.github.chains_project.theo.monitor.utils.FrameInfo;
 import jdk.jfr.consumer.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +23,7 @@ public class Processor {
             classLoader == null || classLoader.getName().equals("bootstrap");
     private final Predicate<String> methodRemovablePredicate = className -> (className == null ||
             className.contains("surefire") || className.contains("junit") || className.contains("theo"));
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     /**
      * Reads the JFR recordings and extracts dependency privileges.
@@ -57,7 +60,7 @@ public class Processor {
                 return new AccessRecord(depName, List.of(detectorEvent));
             }
         } catch (NullPointerException | IllegalArgumentException e) {
-            System.err.println("Error reading the event: " + event.getEventType().getName() + e);
+            log.error("Error reading the event: {}", event.getEventType().getName(), e);
         }
         return null;
     }

@@ -7,6 +7,8 @@ import io.github.chains_project.theo.monitor.utils.JsonUtils;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import shaded.fasterxml.jackson.core.type.TypeReference;
 import shaded.fasterxml.jackson.databind.ObjectMapper;
 
@@ -23,6 +25,7 @@ public class BaseDetector {
     private static final List<DetectorCategoryFactory.DetectionCategory> detectors =
             new ArrayList<>(EnumSet.allOf(DetectorCategoryFactory.DetectionCategory.class));
     private static final String JDK_EVENT_PREFIX = "jdk.";
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     /**
      * Receives realtime JFR events and sends them for further processing.
@@ -39,7 +42,7 @@ public class BaseDetector {
                 eventStream = EventStream.openRepository(repositoryPath);
                 return eventStream;
             } catch (IOException e) {
-                System.err.println("Error opening event stream: " + e);
+                log.error("Error opening event stream: ", e);
                 return null;
             }
         }, reportFile);
@@ -58,7 +61,7 @@ public class BaseDetector {
             try {
                 return new RecordingFile(recordingFile);
             } catch (IOException e) {
-                System.err.println("Error reading the JFR recordings: " + e);
+                log.error("Error reading the JFR recordings: ", e);
                 return null;
             }
         }, reportFile);
@@ -77,11 +80,11 @@ public class BaseDetector {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error processing the JFR events: " + e);
+            log.error("Error reading the JFR recordings: ", e);
         }
-        System.out.println("Processing completed...");
+        log.info("Processing completed...");
         JsonUtils.writeToFile(reportPath, convertAccessRecordsToReport(allAccessRecords));
-        System.out.println("Access records are written to " + reportPath);
+        log.info("Access records are written to " + reportPath);
     }
 
     private void processEvent(RecordedEvent event, Processor processor, List<AccessRecord> allAccessRecords) {
