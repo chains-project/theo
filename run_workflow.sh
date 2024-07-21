@@ -6,12 +6,13 @@ mvn clean package
 read -p "Generate a maven-lockfile for your project using the following command.
   mvn io.github.chains-project:maven-lockfile:generate
   Press any key to continue." -n1 -s
-read -p $'\n'"Enter the lockfile path(s): " lockfile
-mvn exec:java -Dexec.args="-l $lockfile"
+read -p $'\n'"Enter the pom file path(s): " pomfile
+mvn exec:java -Dexec.args="-l $pomfile"
 cd ../shader || exit
 mvn clean install
 cd ../monitor || exit
-mvn -U clean package
+mvn clean package
+read -p $'\n'"Enter the lockfile path(s): " lockfile
 case $yn in
   [yY] )
     read -p "Run the test suite using the following command.
