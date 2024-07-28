@@ -7,16 +7,20 @@ read -p "Generate a maven-lockfile for your project using the following command.
   mvn io.github.chains-project:maven-lockfile:generate
   Press any key to continue." -n1 -s
 read -p $'\n'"Enter the pom file path(s): " pomfile
-mvn exec:java -Dexec.args="-l $pomfile"
+read -p $'\n'"Enter the lockfile path(s): " lockfile
+mvn exec:java -Dexec.args="-p $pomfile -l $lockfile"
 cd ../shader || exit
 mvn clean install
 cd ../monitor || exit
 mvn clean package
-read -p $'\n'"Enter the lockfile path(s): " lockfile
 case $yn in
   [yY] )
     read -p "Run the test suite using the following command.
-      mvn test -DargLine=-XX:StartFlightRecording=name=<name>,settings=settings.jfc,filename=<path_to_save_the_JFR_recording>
+      mvn test -DargLine=\"-XX:StartFlightRecording=name=<name>,settings=settings.jfc,filename=<path_to_save_the_JFR_recording>\"
+      Alternatively, set an environment variable and run the tests.
+      export MAVEN_OPTS=\"-XX:StartFlightRecording=name=name,settings=settings.jfc,filename=<path_to_save_the_JFR_recording>\"
+      mvn test
+      unset MAVEN_OPTS
       Press any key to continue once the test execution is completed." -n1 -s
     read -p $'\n'"Enter the file path to the JFR recording : " jfr
     read -p "Enter a file path to save the report: " testReport
