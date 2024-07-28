@@ -34,8 +34,7 @@ public class DetectorCategoryFactory {
                     return null;
                 }
                 // ToDo: update these path checkers in a better way
-                if (raw.contains(".jfr") || raw.endsWith(".jar")
-                        || raw.contains("lockfile") || raw.contains("Access")) {
+                if (raw.endsWith(".jar")) {
                     return null;
                 }
                 return new FileWrite(method, className, calledBy, raw);
@@ -48,8 +47,7 @@ public class DetectorCategoryFactory {
                 long bytesRead = event.getValue("bytesRead");
                 boolean endOfFile = event.getValue("endOfFile");
                 // ToDo: update these path checkers in a better way
-                if (raw.contains(".jfr") || raw.contains("onlyAcces") || raw.contains("lockfile")
-                        || raw.contains("access") || raw.contains(".jar")) {
+                if (raw.contains(".jar")) {
                     return null;
                 }
                 return new FileRead(method, className, calledBy, raw, Long.toString(bytesRead),
@@ -62,8 +60,7 @@ public class DetectorCategoryFactory {
                 }
                 boolean metaData = event.getValue("metaData");
                 // ToDo: update these path checkers in a better way
-                if (raw.contains(".jfr") || raw.contains("onlyAcces") || raw.contains("lockfile")
-                        || raw.contains("access")) {
+                if (raw.contains(".jar")) {
                     return null;
                 }
                 return new FileForce(method, className, calledBy, raw, Boolean.toString(metaData));
@@ -144,6 +141,7 @@ public class DetectorCategoryFactory {
      */
     public enum DetectionCategory {
 
+        CLASSLOAD("ClassLoad"),
         // Writing data to a file
         FILEWRITE("FileWrite"),
         // Reading data from a file

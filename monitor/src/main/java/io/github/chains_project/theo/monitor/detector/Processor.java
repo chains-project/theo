@@ -20,7 +20,7 @@ import java.util.function.Predicate;
 public class Processor {
 
     private final Predicate<RecordedClassLoader> bootstrapMethodPredicate = classLoader ->
-            classLoader == null || classLoader.getName().equals("bootstrap");
+            classLoader == null || classLoader.getName() == null || classLoader.getName().equals("bootstrap");
     private final Predicate<String> methodRemovablePredicate = className -> (className == null ||
             className.contains("surefire") || className.contains("junit") || className.contains("theo"));
     private final Logger log = LoggerFactory.getLogger(this.getClass());
