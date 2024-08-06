@@ -9,8 +9,6 @@ read -p "Generate a maven-lockfile for your project using the following command.
 read -p $'\n'"Enter the pom file path(s): " pomfile
 read -p $'\n'"Enter the lockfile path(s): " lockfile
 mvn exec:java -Dexec.args="-p $pomfile -l $lockfile"
-cd ../shader || exit
-mvn clean install
 cd ../monitor || exit
 mvn clean package
 case $yn in

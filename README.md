@@ -21,7 +21,7 @@ Here's a breakdown of what it does.
 
 - Packages the preprocessor
 - Generates a lockfile for the project under consideration
-- Installs the shader into the local maven repository
+- Adds the dependencies of the project to the classpath of the monitor
 - Packages the monitor
 - Runs the test cases or the workload depending on the use case with JFR attached
 - Runs the monitor and generates the reports
