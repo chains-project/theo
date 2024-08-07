@@ -19,12 +19,13 @@ import java.util.List;
 
 public class InvocationGenerator {
 
-    public CtType<?> generateTestCase(CtMethod<?> method) {
+    public void generateTestCase(CtMethod<?> method) {
         Factory factory = method.getFactory();
         CtAnnotation<?> testAnnotation = factory.createAnnotation(factory.createCtTypeReference(Test.class));
 
         // Generate a new test class
-        CtType<?> generatedTestClass = factory.Class().create("GeneratedTestClass");
+        CtType<?> generatedTestClass = factory.Class().create(method.getDeclaringType().getQualifiedName() +
+                "TestClass");
 
         // Create the test method
         CtMethod<?> generatedTestMethod = factory.createMethod();
@@ -43,7 +44,7 @@ public class InvocationGenerator {
             String dummyValue = generateDummyValue(paramType);
             // Add dummy value initialization to method body
             CtCodeSnippetStatement dummyValueStatement = factory.createCodeSnippetStatement(
-                    paramType.getQualifiedName() + " " + paramName + " = " + dummyValue + ";"
+                    paramType.getQualifiedName() + " " + paramName + " = " + dummyValue
             );
             methodBody.addStatement(dummyValueStatement);
             // Append to parameter list for method call
@@ -57,20 +58,19 @@ public class InvocationGenerator {
         CtStatement instanceCreationStatement = factory.createCodeSnippetStatement(instanceCreation);
         methodBody.addStatement(instanceCreationStatement);
         // Add method invocation
-        String methodInvocation = "instance." + method.getSimpleName() + "(" + paramsStringBuilder + ");";
+        String methodInvocation = "instance." + method.getSimpleName() + "(" + paramsStringBuilder + ")";
         CtStatement methodInvocationStatement = factory.createCodeSnippetStatement(methodInvocation);
         methodBody.addStatement(methodInvocationStatement);
         // Set the method body and add the method to the class
         generatedTestMethod.setBody(methodBody);
         generatedTestClass.addMethod(generatedTestMethod);
 
-        return generatedTestClass;
     }
 
     private String generateInstanceCreation(CtType<?> declaringType) {
         Constructor<?>[] constructors = declaringType.getClass().getConstructors();
         if (constructors.length == 0) {
-            return declaringType.getQualifiedName() + " instance = new " + declaringType.getQualifiedName() + "();";
+            return declaringType.getQualifiedName() + " instance = new " + declaringType.getQualifiedName() + "()";
         }
         // Pick the first constructor
         Constructor<?> constructor = Arrays.stream(constructors).toList().get(0);
@@ -84,7 +84,7 @@ public class InvocationGenerator {
         }
         // Generate the instance with the params
         return declaringType.getQualifiedName() + " instance = new " + declaringType.getQualifiedName() +
-                "(" + constructorParams + ");";
+                "(" + constructorParams + ")";
     }
 
     private String generateDummyValue(CtTypeReference<?> paramType) {
@@ -98,13 +98,13 @@ public class InvocationGenerator {
                 return String.valueOf(faker.number().randomDouble(3, 1, 200));
             }
             case "char" -> {
-                return "a";
+                return "'a'";
             }
             case "boolean" -> {
                 return faker.bool().toString();
             }
             case "java.lang.String" -> {
-                return faker.rockBand().name();
+                return "\"" + faker.rockBand().name() + "\"";
             }
             default -> {
                 if (paramType.isClass()) {
