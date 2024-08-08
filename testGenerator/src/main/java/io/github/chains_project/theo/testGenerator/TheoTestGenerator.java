@@ -6,11 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spoon.MavenLauncher;
 import spoon.reflect.CtModel;
+import spoon.reflect.declaration.CtCompilationUnit;
+import spoon.reflect.declaration.CtType;
+import spoon.reflect.factory.Factory;
+import spoon.reflect.visitor.DefaultJavaPrettyPrinter;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class TheoTestGenerator {
 
@@ -34,6 +41,28 @@ public class TheoTestGenerator {
         }
     }
 
+    private void prettyPrintGeneratedClasses(String outputDirectory, Set<CtType<?>> generatedTestClasses) {
+        if (!generatedTestClasses.isEmpty()) {
+            Factory factory = generatedTestClasses.iterator().next().getFactory();
+            DefaultJavaPrettyPrinter printer = new DefaultJavaPrettyPrinter(factory.getEnvironment());
+            File outputDir = new File(outputDirectory);
+            if (!outputDir.exists()) {
+                outputDir.mkdirs();
+            }
+            for (CtType<?> generatedTestClass : generatedTestClasses) {
+                CtCompilationUnit compilationUnit = factory.CompilationUnit().getOrCreate(generatedTestClass);
+                compilationUnit.setDeclaredPackage(null);
+                printer.calculate(compilationUnit, Collections.singletonList(generatedTestClass));
+                try (FileWriter writer = new FileWriter(new File(outputDirectory, generatedTestClass.getSimpleName() + ".java"))) {
+                    writer.write(printer.getResult());
+                } catch (IOException e) {
+                    log.error("Failed to write the generated test class {} in the output directory.",
+                            generatedTestClass.getSimpleName(), e);
+                }
+            }
+        }
+    }
+
     public void analyzeWithSpoon() {
         log.info("Processing project " + projectName);
         MavenLauncher launcher;
@@ -51,8 +80,7 @@ public class TheoTestGenerator {
         model.processWith(methodProcessor);
         // log.info("Generating invocations for the methods: {}", methodProcessor.getTestMethods());
         writeJsonReportToDisk(methodProcessor.getTestMethods());
-        String outputDirectory = "./output/generated/" + projectName;
-        launcher.setSourceOutputDirectory(outputDirectory);
-        launcher.prettyprint();
+        String outputDirectory = "./output/generated/" + projectName + "/test";
+        prettyPrintGeneratedClasses(outputDirectory, methodProcessor.getGeneratedTestClasses());
     }
 }

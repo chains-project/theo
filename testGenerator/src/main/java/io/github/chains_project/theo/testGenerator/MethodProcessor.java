@@ -14,8 +14,9 @@ import java.util.*;
 
 public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
 
-    private final List<TheoMethod> setOfMethods = new LinkedList<>();
     private static final Logger log = LoggerFactory.getLogger(MethodProcessor.class);
+    private final List<TheoMethod> setOfMethods = new LinkedList<>();
+    private final Set<CtType<?>> generatedTestClasses = new HashSet<>();
 
     private boolean isInvocationOnExternalLibraryMethod(CtAbstractInvocation<?> invocation, CtMethod<?> method) {
         String packageName = method.getDeclaringType().getPackage().getQualifiedName();
@@ -54,8 +55,9 @@ public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
                             method.getSignature(),
                             invocation.toString());
                     InvocationGenerator ig = new InvocationGenerator();
-                    ig.generateTestCase(method);
+                    CtType<?> generatedTestClass = ig.generateTestCase(method);
                     setOfMethods.add(testMethod);
+                    generatedTestClasses.add(generatedTestClass);
                 } else {
                     // If a non-public method calls the private method, recursively check its public callers
                     findAndAddPublicCallers(method, invocation, methodsConsidered);
@@ -79,6 +81,10 @@ public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
         return setOfMethods;
     }
 
+    public Set<CtType<?>> getGeneratedTestClasses() {
+        return generatedTestClasses;
+    }
+
     @Override
     public void process(CtMethod<?> method) {
         try {
@@ -96,9 +102,9 @@ public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
                                         method.getSignature(),
                                         invocation.toString());
                                 InvocationGenerator ig = new InvocationGenerator();
-                                ig.generateTestCase(method);
-                                // Maintaining these two lists is also not necessary.
+                                CtType<?> generatedTestClass = ig.generateTestCase(method);                                // Maintaining this list is also not necessary.
                                 setOfMethods.add(testMethod);
+                                generatedTestClasses.add(generatedTestClass);
                             } else {
                                 findAndAddPublicCallers(method, invocation, new ArrayList<>());
                             }

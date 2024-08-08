@@ -5,10 +5,7 @@ import org.junit.jupiter.api.Test;
 import spoon.reflect.code.CtBlock;
 import spoon.reflect.code.CtCodeSnippetStatement;
 import spoon.reflect.code.CtStatement;
-import spoon.reflect.declaration.CtAnnotation;
-import spoon.reflect.declaration.CtMethod;
-import spoon.reflect.declaration.CtParameter;
-import spoon.reflect.declaration.CtType;
+import spoon.reflect.declaration.*;
 import spoon.reflect.factory.Factory;
 import spoon.reflect.reference.CtTypeReference;
 
@@ -16,23 +13,26 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class InvocationGenerator {
 
-    public void generateTestCase(CtMethod<?> method) {
+    public CtType<?> generateTestCase(CtMethod<?> method) {
         Factory factory = method.getFactory();
         CtAnnotation<?> testAnnotation = factory.createAnnotation(factory.createCtTypeReference(Test.class));
 
         // Generate a new test class
-        CtType<?> generatedTestClass = factory.Class().create(method.getDeclaringType().getQualifiedName() +
-                "TestClass");
+        CtType<?> generatedTestClass = factory.Class().create(method.getDeclaringType().getSimpleName() +
+                "Test");
+        generatedTestClass.setModifiers(Set.of(ModifierKind.PUBLIC));
 
         // Create the test method
         CtMethod<?> generatedTestMethod = factory.createMethod();
         generatedTestMethod.addAnnotation(testAnnotation);
         generatedTestMethod.setSimpleName(method.getSimpleName() + "Test");
         generatedTestMethod.setThrownTypes(method.getThrownTypes());
-
+        generatedTestMethod.setModifiers(Set.of(ModifierKind.PUBLIC));
+        generatedTestMethod.setType(factory.Type().voidPrimitiveType());
         // Create the method body
         CtBlock<?> methodBody = factory.createBlock();
         // Generate dummy values for method parameters
@@ -64,7 +64,7 @@ public class InvocationGenerator {
         // Set the method body and add the method to the class
         generatedTestMethod.setBody(methodBody);
         generatedTestClass.addMethod(generatedTestMethod);
-
+        return generatedTestClass;
     }
 
     private String generateInstanceCreation(CtType<?> declaringType) {
