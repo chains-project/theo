@@ -22,7 +22,7 @@ public class InvocationGenerator {
         CtAnnotation<?> testAnnotation = factory.createAnnotation(factory.createCtTypeReference(Test.class));
 
         // Generate a new test class
-        CtType<?> generatedTestClass = factory.Class().create(method.getDeclaringType().getSimpleName() +
+        CtType<?> generatedTestClass = factory.Class().create(method.getDeclaringType().getQualifiedName() +
                 "Test");
         generatedTestClass.setModifiers(Set.of(ModifierKind.PUBLIC));
 

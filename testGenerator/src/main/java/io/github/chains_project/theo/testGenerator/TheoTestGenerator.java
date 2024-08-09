@@ -24,18 +24,22 @@ public class TheoTestGenerator {
     private static final Logger log = LoggerFactory.getLogger(TheoTestGenerator.class);
     private final Path projectPath;
     private final String projectName;
+    private final String rootPackage;
 
-    public TheoTestGenerator(Path projectPath) {
+    public TheoTestGenerator(Path projectPath, String rootPackage) {
         this.projectPath = projectPath;
         this.projectName = projectPath.getFileName().toString();
+        /* When provided, we use the root package name to filter out the methods coming from the modules in the same
+         project. We do this because we need to generate tests only for the methods coming from third party libraries.*/
+        this.rootPackage = rootPackage;
     }
 
     private void writeJsonReportToDisk(List<TheoMethod> targetMethodList) {
-        String report = "./target-methods-" + projectName + ".json";
+        String report = "./methods-n-invocations-" + projectName + ".json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try (FileWriter writer = new FileWriter(report)) {
             gson.toJson(targetMethodList, writer);
-            log.info("Target methods saved in " + report);
+            log.info("Methods and invocations saved in " + report);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -45,15 +49,17 @@ public class TheoTestGenerator {
         if (!generatedTestClasses.isEmpty()) {
             Factory factory = generatedTestClasses.iterator().next().getFactory();
             DefaultJavaPrettyPrinter printer = new DefaultJavaPrettyPrinter(factory.getEnvironment());
-            File outputDir = new File(outputDirectory);
-            if (!outputDir.exists()) {
-                outputDir.mkdirs();
-            }
             for (CtType<?> generatedTestClass : generatedTestClasses) {
                 CtCompilationUnit compilationUnit = factory.CompilationUnit().getOrCreate(generatedTestClass);
-                compilationUnit.setDeclaredPackage(null);
+                // Get the package name and convert it to a folder path
+                String packageName = generatedTestClass.getPackage().getQualifiedName();
+                String packagePath = packageName.replace('.', File.separatorChar);
+                File packageDir = new File(outputDirectory, packagePath);
+                if (!packageDir.exists()) {
+                    packageDir.mkdirs();
+                }
                 printer.calculate(compilationUnit, Collections.singletonList(generatedTestClass));
-                try (FileWriter writer = new FileWriter(new File(outputDirectory, generatedTestClass.getSimpleName() + ".java"))) {
+                try (FileWriter writer = new FileWriter(new File(packageDir, generatedTestClass.getSimpleName() + ".java"))) {
                     writer.write(printer.getResult());
                 } catch (IOException e) {
                     log.error("Failed to write the generated test class {} in the output directory.",
@@ -76,7 +82,7 @@ public class TheoTestGenerator {
             return;
         }
         CtModel model = launcher.getModel();
-        MethodProcessor methodProcessor = new MethodProcessor();
+        MethodProcessor methodProcessor = new MethodProcessor(rootPackage);
         model.processWith(methodProcessor);
         // log.info("Generating invocations for the methods: {}", methodProcessor.getTestMethods());
         writeJsonReportToDisk(methodProcessor.getTestMethods());

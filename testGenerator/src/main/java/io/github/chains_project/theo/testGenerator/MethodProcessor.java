@@ -17,10 +17,15 @@ public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
     private static final Logger log = LoggerFactory.getLogger(MethodProcessor.class);
     private final List<TheoMethod> setOfMethods = new LinkedList<>();
     private final Set<CtType<?>> generatedTestClasses = new HashSet<>();
+    private final String rootPackage;
+
+    public MethodProcessor(String rootPackage) {
+        this.rootPackage = rootPackage;
+    }
 
     private boolean isInvocationOnExternalLibraryMethod(CtAbstractInvocation<?> invocation, CtMethod<?> method) {
         String packageName = method.getDeclaringType().getPackage().getQualifiedName();
-        List<String> typesToIgnore = List.of("java", packageName);
+        List<String> typesToIgnore = List.of("java", packageName, rootPackage);
         return typesToIgnore.stream().noneMatch(t ->
                 invocation.getExecutable().getDeclaringType().getQualifiedName().startsWith(t));
     }
@@ -53,6 +58,7 @@ public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
                     TheoMethod testMethod = new TheoMethod(
                             method.getDeclaringType().getQualifiedName(),
                             method.getSignature(),
+                            invocation.getExecutable().getDeclaringType().getQualifiedName(),
                             invocation.toString());
                     InvocationGenerator ig = new InvocationGenerator();
                     CtType<?> generatedTestClass = ig.generateTestCase(method);
@@ -100,6 +106,8 @@ public class MethodProcessor extends AbstractProcessor<CtMethod<?>> {
                                 TheoMethod testMethod = new TheoMethod(
                                         method.getDeclaringType().getQualifiedName(),
                                         method.getSignature(),
+                                        // In case we need performance improvement, we can remove this.
+                                        invocation.getExecutable().getDeclaringType().getQualifiedName(),
                                         invocation.toString());
                                 InvocationGenerator ig = new InvocationGenerator();
                                 CtType<?> generatedTestClass = ig.generateTestCase(method);                                // Maintaining this list is also not necessary.

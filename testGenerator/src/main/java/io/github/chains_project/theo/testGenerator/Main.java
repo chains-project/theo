@@ -22,9 +22,17 @@ public class Main {
                 required = true)
         Path projectPath;
 
+        @CommandLine.Option(
+                names = {"-r", "--root"},
+                paramLabel = "ROOT",
+                description = "The root package name of the target Maven project. " +
+                        "This is used to filter out the methods coming from other modules in the same project.",
+                defaultValue = "")
+        String rootPackage;
+
         @Override
         public Integer call() throws Exception {
-            new TheoTestGenerator(projectPath).analyzeWithSpoon();
+            new TheoTestGenerator(projectPath, rootPackage).analyzeWithSpoon();
             return 0;
         }
     }
