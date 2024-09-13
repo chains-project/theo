@@ -25,16 +25,19 @@ better-informed decisions when managing and updating dependencies.
 dummy tests without assertions to invoke all reachable APIs. It uses the [Spoon](https://github.com/INRIA/spoon) library
 for generating these API invocations. [More info](testGenerator/README.md)
 
-**Preprocessor**: Theo uses the [maven-lockfile](https://github.com/chains-project/maven-lockfile) to create a lockfile
-for the project. The preprocessor also temporarily adds project dependencies to the classpath of the monitor by modifying 
-the pom.xml. [More info](preprocessor/README.md)
+**Preprocessor**: The preprocessor temporarily adds project dependencies to the classpath of the monitor by modifying 
+the pom.xml. It uses the [maven-lockfile](https://github.com/chains-project/maven-lockfile) to get more information about 
+the resolved dependencies. [More info](preprocessor/README.md)
 
-**Monitor**: Theo uses [Java Flight Recorder (JFR)](https://openjdk.org/jeps/328) to capture runtime data during program
-execution. Then, a report is generated with access privilege data collected by JFR. [More info](monitor/README.md)
+**Monitor**: The Monitor captures runtime data during program execution using [Java Flight Recorder (JFR)](https://openjdk.org/jeps/328). 
+Then, it generates a report with access privilege data collected by the JFR. [More info](monitor/README.md)
 
 ## Usage
 
-To run the tool, execute the [`run_workflow.sh`](run_workflow.sh).
+To run the tool, execute the `preprocessor` and the `monitor` following the steps given in [`preprocessor/README.md`](preprocessor/README.md) 
+and [`monitor/README.md`](monitor/README.md) respectively.
+
+Alternatively, you can execute the [`run_workflow.sh`](run_workflow.sh).
 
 Here's a breakdown of what it does.
 
@@ -45,9 +48,6 @@ Here's a breakdown of what it does.
 - Runs the test cases or the workload depending on the use case with JFR attached
 - Runs the monitor and generates the reports
 - Resets the pom files
-
-Alternatively, execute the `preprocessor` and the `monitor` following the steps given in [`preprocessor/README.md`](preprocessor/README.md) 
-and [`monitor/README.md`](monitor/README.md) respectively.
 
 ## Work in progress
  
@@ -105,5 +105,5 @@ methods from third-party libraries that invoked the corresponding method.
 
 <!-- references -->
 
-[ci-shield]: https://github.com/chains-project/theo/workflows/test.yml/badge.svg?branch=master
+[ci-shield]: https://github.com/chains-project/theo/actions/workflows/test.yml/badge.svg?branch=main
 [ci-link]: https://github.com/chains-project/theo/actions
