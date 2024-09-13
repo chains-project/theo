@@ -2,6 +2,7 @@ package io.github.chains_project.theo.preprocessor;
 
 import picocli.CommandLine;
 
+import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -24,7 +25,7 @@ public class Main {
                         + "file corresponding to the executable jar",
                 required = true
         )
-        Path pomfile;
+        Path projectPomFile;
 
         @CommandLine.Option(
                 names = {"-l", "--lockfile"},
@@ -37,7 +38,8 @@ public class Main {
         @Override
         public void run() {
             DependencyPreProcessor preProcessor = new DependencyPreProcessor();
-            preProcessor.processPomFile(pomfile, lockfile);
+            Path monitorPomFile = Path.of("../monitor/pom.xml");
+            preProcessor.processPomFile(monitorPomFile, lockfile, projectPomFile);
         }
     }
 }

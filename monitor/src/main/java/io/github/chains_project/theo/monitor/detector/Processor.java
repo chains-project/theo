@@ -87,10 +87,7 @@ public class Processor {
         RecordedMethod method = frame.getMethod();
         RecordedClass type = method.getType();
         String depName = DependencyParser.findDepDetails(getJarPath(type));
-        RecordedClassLoader classLoader = type.getClassLoader();
-        String classLoaderName = classLoader == null ? null : classLoader.getName();
         return new FrameInfo(
-                classLoaderName,
                 getModule(type),
                 type.getName(),
                 method.getName(),

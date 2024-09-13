@@ -52,7 +52,8 @@ public class Main {
         @Override
         public void run() {
             BaseDetector baseDetector = new BaseDetector();
-            baseDetector.trackJFREventsOffline(recordingFile, reportFile, lockfile);
+            Processor processor = new Processor();
+            baseDetector.trackJFREventsOffline(recordingFile, reportFile, lockfile, processor);
         }
     }
 
@@ -88,7 +89,8 @@ public class Main {
         @Override
         public void run() {
             BaseDetector baseDetector = new BaseDetector();
-            baseDetector.trackJFREventsOnline(repositoryPath, reportFile, lockfile);
+            Processor processor = new Processor();
+            baseDetector.trackJFREventsOnline(repositoryPath, reportFile, lockfile, processor);
         }
     }
 }

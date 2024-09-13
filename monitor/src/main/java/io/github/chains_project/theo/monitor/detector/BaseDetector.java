@@ -34,7 +34,7 @@ public class BaseDetector {
      * @param reportFile     the report file path
      * @param lockfile       the lockfile path
      */
-    public void trackJFREventsOnline(Path repositoryPath, Path reportFile, Path lockfile) {
+    public void trackJFREventsOnline(Path repositoryPath, Path reportFile, Path lockfile, Processor processor) {
         DependencyParser.initialize(lockfile);
         processEvents(() -> {
             EventStream eventStream;
@@ -45,7 +45,7 @@ public class BaseDetector {
                 log.error("Error opening event stream: ", e);
                 return null;
             }
-        }, reportFile);
+        }, reportFile, processor);
     }
 
     /**
@@ -55,7 +55,7 @@ public class BaseDetector {
      * @param reportFile    the report file path
      * @param lockfile      the lockfile path
      */
-    public void trackJFREventsOffline(Path recordingFile, Path reportFile, Path lockfile) {
+    public void trackJFREventsOffline(Path recordingFile, Path reportFile, Path lockfile, Processor processor) {
         DependencyParser.initialize(lockfile);
         processEvents(() -> {
             try {
@@ -64,11 +64,10 @@ public class BaseDetector {
                 log.error("Error reading the JFR recordings: ", e);
                 return null;
             }
-        }, reportFile);
+        }, reportFile, processor);
     }
 
-    private void processEvents(Supplier<AutoCloseable> eventSupplier, Path reportPath) {
-        Processor processor = new Processor();
+    private void processEvents(Supplier<AutoCloseable> eventSupplier, Path reportPath, Processor processor) {
         List<AccessRecord> allAccessRecords = new ArrayList<>();
         try (AutoCloseable eventStream = eventSupplier.get()) {
             if (eventStream instanceof EventStream es) {
