@@ -20,11 +20,11 @@ will be saved in the `./methods-n-invocations-<project-name>.json` file. The gen
    ```
    mvn clean install
    ``` 
-   This generates target/jar-with-dependencies.jar
+   This generates target/testGenerator-version-jar-with-dependencies.jar
 
 2. Run the test-generator.
    ```
-   java -jar -p <path_to_the_project> -r <root_name_of_the_project>
+   java -jar <path_to_the_jar_with_dependencies> -p <path_to_the_project> -r <root_name_of_the_project>
    ```
    The `root_name` is optional. If you have a multi-module project you can define it, so that it can be used to skip the
    methods coming from other sub-modules.
