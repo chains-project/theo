@@ -12,8 +12,8 @@
     <artifactId>testGenerator</artifactId>
 
     <properties>
-        <maven.compiler.source>18</maven.compiler.source>
-        <maven.compiler.target>18</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spoon-core.version>11.0.0</spoon-core.version>
         <junit.jupiter.version>5.10.1</junit.jupiter.version>
