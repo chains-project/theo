@@ -22,7 +22,6 @@
         <module>preprocessor</module>
         <module>monitor</module>
         <module>shader</module>
-        <module>testGenerator</module>
     </modules>
 
     <properties>
