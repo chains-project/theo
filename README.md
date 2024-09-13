@@ -105,5 +105,5 @@ methods from third-party libraries that invoked the corresponding method.
 
 <!-- references -->
 
-[ci-shield]: https://github.com/chains-project/theo/workflows/test.yml/badge.svg
+[ci-shield]: https://github.com/chains-project/theo/workflows/test.yml/badge.svg?branch=master
 [ci-link]: https://github.com/chains-project/theo/actions
