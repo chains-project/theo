@@ -25,9 +25,9 @@ case $yn in
     mvn exec:java -Dexec.args="track-offline -j $jfr -l $lockfile -r $testReport"
     ;;
   [nN] )
-    read -p "Enter the file path to the JFR recording : " jfr
-    read -p "Enter the report file path: " testReport
-    mvn exec:java -Dexec.args="track-offline -j $jfr -l $lockfile -r $testReport"
+    read -p "Enter a file path to save the report: " prodReport
+    read -p "Enter the repository path (if you are on a Windows machine specifying this is mandatory. Or else, to use the default value just press any key.) : " repositoryPath
+    mvn exec:java -Dexec.args="track-online -j $repositoryPath -l $lockfile -r $prodReport"
     read -p "Copy the path to the 'settings.jfc' file. (You can find it under the root folder of Theo).
       Press any key to continue." -n1 -s
     read -p $'\n'"Run the application that needs to be monitored with a workload now, using the following command.
