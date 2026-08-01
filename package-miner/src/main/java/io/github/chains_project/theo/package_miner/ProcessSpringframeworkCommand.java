@@ -23,7 +23,6 @@ public class ProcessSpringframeworkCommand implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessSpringframeworkCommand.class);
     private static final long SCAN_TIMEOUT_MINUTES = 30;
-    private static final int MAX_VERSIONS_PER_PACKAGE = 50;
     private static final int VERSION_HISTORY_YEARS = 5;
     private static final Pattern PRE_RELEASE = Pattern.compile(
             "SNAPSHOT|alpha|beta|-rc|-m\\d|milestone|nightly|dev|preview|incubating",
@@ -142,12 +141,6 @@ public class ProcessSpringframeworkCommand implements Runnable {
         if (stableVersions.size() <= 1) {
             log.info("  Only {} stable version(s), skipping.", stableVersions.size());
             return false;
-        }
-
-        if (stableVersions.size() > MAX_VERSIONS_PER_PACKAGE) {
-            log.info("  {} stable versions, capping to {}.", stableVersions.size(), MAX_VERSIONS_PER_PACKAGE);
-            stableVersions = stableVersions.subList(
-                    stableVersions.size() - MAX_VERSIONS_PER_PACKAGE, stableVersions.size());
         }
 
         log.info("  Analyzing {} stable versions...", stableVersions.size());
