@@ -69,7 +69,22 @@ public class ProcessSpringframeworkCommand implements Runnable {
             return;
         }
 
+        List<PackageInfo> nonSpring = remaining.stream()
+                .filter(p -> !p.groupId().startsWith("org.springframework"))
+                .toList();
+        if (!nonSpring.isEmpty()) {
+            log.info("Filtering out {} non-springframework packages.", nonSpring.size());
+            remaining = remaining.stream()
+                    .filter(p -> p.groupId().startsWith("org.springframework"))
+                    .toList();
+        }
+
         log.info("Loaded {} springframework packages to process.", remaining.size());
+
+        if (remaining.isEmpty()) {
+            log.info("No org.springframework packages found in {}.", SKIPPED_FILE);
+            return;
+        }
 
         MavenCentralClient client = new MavenCentralClient();
         PackageAnalyzer analyzer = new PackageAnalyzer(analyzerJar, outputDir, client);
@@ -90,7 +105,7 @@ public class ProcessSpringframeworkCommand implements Runnable {
             if (Files.exists(historyFile)) {
                 log.info("  Version history already exists, skipping.");
                 stillRemaining.remove(pkg);
-                saveRemaining(skippedFile, stillRemaining);
+                saveRemaining(skippedFile, nonSpring, stillRemaining);
                 skipped++;
                 continue;
             }
@@ -104,8 +119,8 @@ public class ProcessSpringframeworkCommand implements Runnable {
             }
 
             stillRemaining.remove(pkg);
-            saveRemaining(skippedFile, stillRemaining);
-            log.info("  Removed from {}. {} remaining.", SKIPPED_FILE, stillRemaining.size());
+            saveRemaining(skippedFile, nonSpring, stillRemaining);
+            log.info("  Removed from {}. {} springframework remaining.", SKIPPED_FILE, stillRemaining.size());
         }
 
         log.info("=============================================================");
@@ -220,9 +235,11 @@ public class ProcessSpringframeworkCommand implements Runnable {
         return false;
     }
 
-    private void saveRemaining(Path file, List<PackageInfo> remaining) {
+    private void saveRemaining(Path file, List<PackageInfo> nonSpring, List<PackageInfo> springRemaining) {
         try {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), remaining);
+            List<PackageInfo> all = new ArrayList<>(nonSpring);
+            all.addAll(springRemaining);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), all);
         } catch (IOException e) {
             log.error("Failed to update {}.", file, e);
         }
