@@ -46,7 +46,7 @@ public class MavenCentralClient {
     public record CollectResult(List<PackageInfo> packages, int lastPage) {}
 
     public CollectResult fetchPopularJavaPackagesPaged(int count, int cutoffYear, int startPage)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
         boolean collectAll = (count <= 0);
         List<PackageInfo> results = new ArrayList<>();
         Set<String> seen = new HashSet<>();
