@@ -403,16 +403,8 @@ public class ScanOrchestrator {
 
     private void processVersionHistory(PackageInfo pkg, MavenCentralClient client,
                                         PackageAnalyzer analyzer, VersionHistoryTracker tracker) {
-        // TODO: remove this skip block and delete skipped_springframework_for_later.json when done
-        if (pkg.groupId().contains("org.springframework")) {
-            log.info("  Skipping {} (springframework deferred).", pkg.coordinate());
-            if (!(pkg.coordinate().startsWith("org.springframework.boot:spring-boot-starter-test:")
-                    || pkg.coordinate().startsWith("org.springframework.boot:spring-boot-starter-web:")
-                    || pkg.coordinate().startsWith("org.springframework:spring-context-history:")
-                    || pkg.coordinate().startsWith("org.springframework:spring-webmvc-history:"))
-                    || pkg.coordinate().startsWith("org.springframework:spring-core:")) {
-                appendSkipped("skipped_springframework_for_later.json", pkg);
-            }
+        // TODO: remove this block once springframework processing is done
+        if (!pkg.groupId().startsWith("org.springframework")) {
             return;
         }
 
