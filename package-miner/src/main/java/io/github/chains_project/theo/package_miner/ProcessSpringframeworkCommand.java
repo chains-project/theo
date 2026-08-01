@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.chains_project.theo.package_miner.model.PackageInfo;
 import io.github.chains_project.theo.package_miner.model.VersionHistory;
 import io.github.chains_project.theo.package_miner.model.VersionInfo;
+import io.github.chains_project.theo.package_miner.util.CheckpointManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -18,7 +19,7 @@ import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 @CommandLine.Command(name = "process-springframework", mixinStandardHelpOptions = true,
-        description = "Process previously skipped org.springframework packages (version history analysis).")
+        description = "Analyze all org.springframework packages: run per-version static analysis and build version history.")
 public class ProcessSpringframeworkCommand implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessSpringframeworkCommand.class);
@@ -27,8 +28,6 @@ public class ProcessSpringframeworkCommand implements Runnable {
     private static final Pattern PRE_RELEASE = Pattern.compile(
             "SNAPSHOT|alpha|beta|-rc|-m\\d|milestone|nightly|dev|preview|incubating",
             Pattern.CASE_INSENSITIVE);
-
-    private static final String SKIPPED_FILE = "skipped_springframework_for_later.json";
 
     @CommandLine.Option(names = {"-o", "--output-dir"}, paramLabel = "OUTPUT-DIR",
             description = "Directory with existing scan results.", required = true)
@@ -50,41 +49,25 @@ public class ProcessSpringframeworkCommand implements Runnable {
             downloadDir = outputDir.resolve("jars");
         }
 
-        Path skippedFile = outputDir.resolve(SKIPPED_FILE);
-        if (!Files.exists(skippedFile)) {
-            log.error("No {} found in {}.", SKIPPED_FILE, outputDir);
+        // Load all packages from selected_packages.json
+        CheckpointManager checkpoint = new CheckpointManager(outputDir);
+        List<PackageInfo> allPackages = checkpoint.loadPackageList();
+        if (allPackages == null || allPackages.isEmpty()) {
+            log.error("No selected_packages.json found in {}.", outputDir);
             return;
         }
 
-        List<PackageInfo> remaining;
-        try {
-            remaining = mapper.readValue(skippedFile.toFile(), new TypeReference<>() {});
-        } catch (IOException e) {
-            log.error("Failed to read {}.", skippedFile, e);
-            return;
-        }
-
-        if (remaining.isEmpty()) {
-            log.info("{} is empty — nothing to process.", SKIPPED_FILE);
-            return;
-        }
-
-        List<PackageInfo> nonSpring = remaining.stream()
-                .filter(p -> !p.groupId().startsWith("org.springframework"))
+        // Filter to org.springframework only
+        List<PackageInfo> springPackages = allPackages.stream()
+                .filter(p -> p.groupId().startsWith("org.springframework"))
                 .toList();
-        if (!nonSpring.isEmpty()) {
-            log.info("Filtering out {} non-springframework packages.", nonSpring.size());
-            remaining = remaining.stream()
-                    .filter(p -> p.groupId().startsWith("org.springframework"))
-                    .toList();
-        }
 
-        log.info("Loaded {} springframework packages to process.", remaining.size());
-
-        if (remaining.isEmpty()) {
-            log.info("No org.springframework packages found in {}.", SKIPPED_FILE);
+        if (springPackages.isEmpty()) {
+            log.info("No org.springframework packages found in selected_packages.json.");
             return;
         }
+
+        log.info("Found {} org.springframework packages in selected_packages.json.", springPackages.size());
 
         MavenCentralClient client = new MavenCentralClient();
         PackageAnalyzer analyzer = new PackageAnalyzer(analyzerJar, outputDir, client);
@@ -92,43 +75,35 @@ public class ProcessSpringframeworkCommand implements Runnable {
 
         int succeeded = 0;
         int failed = 0;
-        int skipped = 0;
+        int skippedHistory = 0;
 
-        List<PackageInfo> stillRemaining = new ArrayList<>(remaining);
+        for (int i = 0; i < springPackages.size(); i++) {
+            PackageInfo pkg = springPackages.get(i);
+            log.info("[{}/{}] Processing {}...", i + 1, springPackages.size(), pkg.coordinate());
 
-        for (int i = 0; i < remaining.size(); i++) {
-            PackageInfo pkg = remaining.get(i);
-            log.info("[{}/{}] Processing {}...", i + 1, remaining.size(), pkg.coordinate());
-
+            // Skip if version history already exists
             Path historyFile = outputDir.resolve("version-history")
                     .resolve(pkg.groupId() + "_" + pkg.artifactId() + "-history.json");
             if (Files.exists(historyFile)) {
                 log.info("  Version history already exists, skipping.");
-                stillRemaining.remove(pkg);
-                saveRemaining(skippedFile, nonSpring, stillRemaining);
-                skipped++;
+                skippedHistory++;
                 continue;
             }
 
             boolean success = processVersionHistory(pkg, client, analyzer, tracker);
-
             if (success) {
                 succeeded++;
             } else {
                 failed++;
             }
-
-            stillRemaining.remove(pkg);
-            saveRemaining(skippedFile, nonSpring, stillRemaining);
-            log.info("  Removed from {}. {} springframework remaining.", SKIPPED_FILE, stillRemaining.size());
         }
 
         log.info("=============================================================");
         log.info("  SPRINGFRAMEWORK PROCESSING RESULTS");
-        log.info("  Total:     {}", remaining.size());
-        log.info("  Succeeded: {}", succeeded);
-        log.info("  Failed:    {}", failed);
-        log.info("  Skipped:   {} (already had version history)", skipped);
+        log.info("  Total:                  {}", springPackages.size());
+        log.info("  Succeeded:              {}", succeeded);
+        log.info("  Failed:                 {}", failed);
+        log.info("  Skipped (had history):  {}", skippedHistory);
         log.info("=============================================================");
 
         try {
@@ -169,15 +144,21 @@ public class ProcessSpringframeworkCommand implements Runnable {
 
                 String reportKey = ver.groupId() + "_" + ver.artifactId() + "_" + ver.version();
                 Path existingReport = outputDir.resolve("reports").resolve(reportKey + "-report.json");
+
+                // Reuse existing report if available
                 if (Files.exists(existingReport) && Files.size(existingReport) > 0) {
+                    log.info("    {} — reusing existing report.", ver.version());
                     reportEntries.add(new VersionHistoryTracker.VersionReportEntry(
                             ver.version(), ver.timestamp(), existingReport));
                     firstVersion = false;
                     continue;
                 }
 
+                // No report exists — run analysis
+                log.info("    {} — analyzing...", ver.version());
                 Path bytecodeJar = client.downloadBytecodeJarForVersion(ver, downloadDir);
                 if (bytecodeJar == null) {
+                    log.warn("    {} — download failed, skipping.", ver.version());
                     continue;
                 }
 
@@ -193,10 +174,10 @@ public class ProcessSpringframeworkCommand implements Runnable {
                 } catch (TimeoutException e) {
                     analysisFuture.cancel(true);
                     if (firstVersion) {
-                        log.warn("  First version {} timed out, skipping entire package.", ver.coordinate());
+                        log.warn("    {} — first version timed out, skipping entire package.", ver.version());
                         return false;
                     }
-                    log.warn("  Version {} timed out, skipping.", ver.coordinate());
+                    log.warn("    {} — timed out, skipping.", ver.version());
                     continue;
                 } finally {
                     timeoutExecutor.shutdownNow();
@@ -207,14 +188,17 @@ public class ProcessSpringframeworkCommand implements Runnable {
                 if (result.analyzerSucceeded()) {
                     Path reportFile = outputDir.resolve("reports").resolve(reportKey + "-report.json");
                     if (Files.exists(reportFile)) {
+                        log.info("    {} — analysis succeeded.", ver.version());
                         reportEntries.add(new VersionHistoryTracker.VersionReportEntry(
                                 ver.version(), ver.timestamp(), reportFile));
                     }
+                } else {
+                    log.warn("    {} — analyzer failed.", ver.version());
                 }
             } catch (OutOfMemoryError e) {
-                log.warn("  OOM analyzing version {}, skipping.", ver.coordinate());
+                log.warn("    {} — OOM, skipping.", ver.coordinate());
             } catch (Exception e) {
-                log.debug("  Failed to analyze version {}: {}", ver.coordinate(), e.getMessage());
+                log.warn("    {} — failed: {}", ver.coordinate(), e.getMessage());
             }
         }
 
@@ -223,25 +207,17 @@ public class ProcessSpringframeworkCommand implements Runnable {
                 VersionHistory.PackageVersionHistory history =
                         tracker.buildHistory(pkg.groupId(), pkg.artifactId(), reportEntries);
                 tracker.saveHistory(history, outputDir);
-                log.info("  {} versions analyzed, changes: {}", reportEntries.size(), history.hasPermissionChanges());
+                log.info("  Done: {} versions analyzed, permission changes: {}",
+                        reportEntries.size(), history.hasPermissionChanges());
                 return true;
             } catch (IOException e) {
                 log.error("  Failed to save version history.", e);
             }
         } else {
-            log.info("  Only {} usable reports, not enough for history.", reportEntries.size());
+            log.info("  Only {} usable reports out of {} versions, not enough for history.",
+                    reportEntries.size(), stableVersions.size());
         }
 
         return false;
-    }
-
-    private void saveRemaining(Path file, List<PackageInfo> nonSpring, List<PackageInfo> springRemaining) {
-        try {
-            List<PackageInfo> all = new ArrayList<>(nonSpring);
-            all.addAll(springRemaining);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), all);
-        } catch (IOException e) {
-            log.error("Failed to update {}.", file, e);
-        }
     }
 }
